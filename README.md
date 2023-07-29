@@ -116,6 +116,46 @@ Now, you can create the Glue Job using the AWS Management Console or by using Te
 
 <img width="1436" alt="image" src="https://github.com/SanikaMK/AWS-Glue/assets/88078801/b34c540c-ea53-4f3d-a270-8fc7cadfd22d">
 
+```
+import sys
+from awsglue.transforms import *
+from awsglue.utils import getResolvedOptions
+from pyspark.context import SparkContext
+from awsglue.context import GlueContext
+from pyspark.sql import SparkSession
+
+# Initialize GlueContext and SparkContext
+args = getResolvedOptions(sys.argv, ['JOB_NAME'])
+sc = SparkContext()
+glueContext = GlueContext(sc)
+spark = glueContext.spark_session
+
+# Source and target S3 paths
+source_path = "s3://scene-test1-s3/whitewines.csv"
+target_folder_path = "s3://scene-target/"
+
+# Read data from the source CSV file
+source_data = glueContext.create_dynamic_frame.from_catalog(
+    database = "your_database",
+    table_name = "your_table",
+    transformation_ctx = "source_data",
+    format = "csv",  # Specify the source data format
+    option = {"header": "true"}  # If the CSV has a header row
+)
+
+# Convert the DynamicFrame to Spark DataFrame
+source_df = source_data.toDF()
+
+# Perform your data transformations (Example: Convert column 'age' from string to integer)
+transformed_df = source_df.withColumn("chlorides", source_df["chlorides"].cast("int"))
+
+# Write the transformed data to the target S3 location as Parquet (partitioned by 'gender')
+transformed_df.write.partitionBy("gender").parquet(target_folder_path)
+
+# Commit the job and release resources
+job.commit()
+```
+
 
 ```
 provider "aws" {
