@@ -114,6 +114,9 @@ Make sure that the CSV file you are reading has the first row as the header row 
 Create the Glue Job using AWS Console or Terraform
 Now, you can create the Glue Job using the AWS Management Console or by using Terraform. If you prefer Terraform, you can modify the previous Terraform script to create the Glue job with the necessary IAM role and permissions:
 
+<img width="1436" alt="image" src="https://github.com/SanikaMK/AWS-Glue/assets/88078801/b34c540c-ea53-4f3d-a270-8fc7cadfd22d">
+
+
 ```
 provider "aws" {
   region = "us-east-2"  # Change to your desired AWS region
