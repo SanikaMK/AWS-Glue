@@ -69,7 +69,7 @@ To fix that, use this:
 ```
 terraform init -migrate-state
 ```
-Next Step is to apply to changes:
+The next step is to apply to changes:
 ```
 terraform apply
 ```
@@ -77,6 +77,145 @@ After this step you can see the S3 bucket being created on your AWS:
 <img width="801" alt="image" src="https://github.com/SanikaMK/AWS-Glue/assets/88078801/e82b2bfe-e156-4d5d-8f24-99d127acdef6">
 
 Now Upload the data that you chose from the Open Source. 
+
+To read a CSV file from an S3 bucket using AWS Glue, you can create a Glue job. Glue jobs allow you to perform data transformations and ETL (Extract, Transform, Load) operations on your data. Here's a step-by-step guide on how to read a CSV file from S3 using AWS Glue:
+
+Step 1: Create an IAM Role for Glue Job
+First, create an IAM role that grants necessary permissions to your Glue job. This role will allow Glue to access the S3 bucket containing the CSV file. You can do this through the AWS Management Console or by using AWS CLI or SDKs.
+
+Step 2: Write the Glue Job Script
+Write the Glue job script in Python or Scala, depending on your preference. For this example, let's use Python. Save the script as glue_job_script.py. Here's a basic example to read a CSV file and print its contents:
+
+python
+Copy code
+import sys
+from awsglue.transforms import *
+from awsglue.utils import getResolvedOptions
+from pyspark.context import SparkContext
+from awsglue.context import GlueContext
+from awsglue.job import Job
+
+# Create GlueContext and SparkContext
+args = getResolvedOptions(sys.argv, ['JOB_NAME'])
+sc = SparkContext()
+glueContext = GlueContext(sc)
+spark = glueContext.spark_session
+
+# Create the dynamic frame to read the CSV file from S3
+source_path = "s3://your-source-bucket/csv-files/your-file.csv"  # Replace with your S3 bucket and CSV file path
+dynamic_frame = glueContext.create_dynamic_frame.from_options(
+    connection_type="s3",
+    connection_options={"paths": [source_path]},
+    format="csv",
+    format_options={"withHeader": "true"}
+)
+
+# Print the contents of the dynamic frame
+dynamic_frame.printSchema()
+dynamic_frame.show()
+Step 3: Create the Glue Job using AWS Console or Terraform
+Now, you can create the Glue Job using the AWS Management Console or by using Terraform. If you prefer Terraform, you can modify the previous Terraform script to create the Glue job with the necessary IAM role and permissions:
+
+hcl
+Copy code
+provider "aws" {
+  region = "us-east-1"  # Change to your desired AWS region
+}
+
+# IAM Role for Glue Job (Create as described in the previous answer)
+
+# Glue Job
+resource "aws_glue_job" "glue_read_csv_job" {
+  name        = "glue-read-csv-job"
+  role_arn    = aws_iam_role.glue_role.arn
+  command {
+    name        = "glueetl"
+    python_script = filebase64("glue_job_script.py")  # Path to the Glue job script
+  }
+}
+Step 4: Apply the Terraform Configuration
+Run the following commands in the same directory as the Terraform script:
+
+bash
+Copy code
+terraform init
+terraform apply
+This will create the Glue job that reads the CSV file from the specified S3 bucket and prints its contents. You can modify the Glue job script to perform more complex transformations or write the data to a different destination.
+
+Please ensure that the S3 path in the script matches the actual location of your CSV file in the S3 bucket.
+
+
+
+
+User
+source_path = "s3://scene-test1-s3/whitewines.csv"  # Replace with your S3 bucket and CSV file path
+dynamic_frame = glueContext.create_dynamic_frame.from_options(
+    connection_type="s3",
+    connection_options={"paths": [source_path]},
+    format="csv",
+    format_options={"withHeader": "false"}
+)
+
+dynamic_frame.show() is empty
+ChatGPT
+If your dynamic_frame.show() is empty, it means that Glue was not able to read the CSV file correctly. The most likely reason for this is that the withHeader option is set to false, and Glue is treating the first row of your CSV file as data instead of column headers. As a result, it is unable to properly interpret the data.
+
+To fix this issue, you should set withHeader to true in the format_options when creating the dynamic frame. This way, Glue will read the first row as column headers, and the data will be displayed correctly. Here's the updated Glue job script:
+```
+import sys
+from awsglue.transforms import *
+from awsglue.utils import getResolvedOptions
+from pyspark.context import SparkContext
+from awsglue.context import GlueContext
+from awsglue.job import Job
+  
+sc = SparkContext.getOrCreate()
+glueContext = GlueContext(sc)
+spark = glueContext.spark_session
+job = Job(glueContext)
+source_path = "s3://scene-test1-s3/whitewines.csv"  # Replace with your S3 bucket and CSV file path
+dynamic_frame = glueContext.create_dynamic_frame.from_options(
+    connection_type="s3",
+    connection_options={"paths": [source_path]},
+    format="csv",
+    format_options={"withHeader": "true"}
+)
+dynamic_frame.show()
+job.commit()
+```
+Make sure that the CSV file you are reading has the first row as the header row containing column names. After making these changes, the Glue job should be able to read the CSV file correctly, and you should see the contents of the dynamic frame in the output.
+
+Create the Glue Job using AWS Console or Terraform
+Now, you can create the Glue Job using the AWS Management Console or by using Terraform. If you prefer Terraform, you can modify the previous Terraform script to create the Glue job with the necessary IAM role and permissions:
+
+```
+provider "aws" {
+  region = "us-east-2"  # Change to your desired AWS region
+}
+
+# IAM Role for Glue Job (Create as described in the previous answer)
+
+# Glue Job
+resource "aws_glue_job" "glue_read_csv_job" {
+  name        = "glue-read-csv-job"
+  role_arn    = aws_iam_role.glue_role.arn
+  command {
+    name        = "glueetl"
+    python_script = filebase64("nb2.py")  # Path to the Glue job script
+  }
+}
+```
+Apply the Terraform Configuration
+Run the following commands in the same directory as the Terraform script:
+```
+terraform init
+terraform apply
+```
+This will create the Glue job that reads the CSV file from the specified S3 bucket and prints its contents. You can modify the Glue job script to perform more complex transformations or write the data to a different destination.
+
+
+
+
 
 
 
